@@ -93,6 +93,8 @@
     <Content Include="ApplicationInsights.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="lib\Emmellsoft.IoT.Rpi.SenseHat\Emmellsoft.IoT.Rpi.SenseHat.pri" />
+    <None Include="lib\RT.IoT.Sensors\RT.IoT.Sensors.pri" />
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
@@ -112,6 +114,12 @@
     <None Include="SenseHatDemo_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="lib\Emmellsoft.IoT.Rpi.SenseHat\Emmellsoft.IoT.Rpi.SenseHat.dll" />
+    <Content Include="lib\Emmellsoft.IoT.Rpi.SenseHat\Emmellsoft.IoT.Rpi.SenseHat.pdb" />
+    <Content Include="lib\Emmellsoft.IoT.Rpi.SenseHat\Properties\Rpi.SenseHat.rd.xml" />
+    <Content Include="lib\RT.IoT.Sensors\Properties\RichardsTech.Sensors.rd.xml" />
+    <Content Include="lib\RT.IoT.Sensors\RT.IoT.Sensors.dll" />
+    <Content Include="lib\RT.IoT.Sensors\RT.IoT.Sensors.pdb" />
     <Content Include="Properties\Default.rd.xml" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
     <Content Include="Assets\SplashScreen.scale-200.png" />
@@ -141,9 +149,7 @@
       <HintPath>.\RT.IoT.Sensors.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="lib\" />
-  </ItemGroup>
+  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
