@@ -82,7 +82,7 @@ namespace SenseHatDemo
 
 
             // Update forecast for first time
-            getWeather(currentCity);
+            await getWeather(currentCity);
 
             // Check joystick every 100 ms
             joystickPollTimer = ThreadPoolTimer.CreatePeriodicTimer(pollJoystick, TimeSpan.FromMilliseconds(50));
