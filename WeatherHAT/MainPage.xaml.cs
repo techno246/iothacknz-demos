@@ -123,7 +123,13 @@ namespace SenseHatDemo
             senseHat.Sensors.HumiditySensor.Update();
             senseHat.Sensors.PressureSensor.Update();
 
+            // Update LED display
             updateScreen();
+
+            // Update App UI display
+            temperature.Text = Math.Round(senseHat.Sensors.Temperature.Value).ToString() + " degrees C";
+            humidity.Text = Math.Round(senseHat.Sensors.Humidity.Value).ToString() + " %";
+            pressure.Text = Math.Round(senseHat.Sensors.Pressure.Value).ToString() + " hPa";
         }
 
         private void updateScreen()
@@ -220,11 +226,6 @@ namespace SenseHatDemo
             textBlockHumidity.Text = weatherObject.main.humidity + " %";
             textBlockPressure.Text = weatherObject.main.pressure + " hPa";
             textBlockConditions.Text = weatherObject.weather.First().description;
-
-            // Assign textboxes in UI to values retrieved from sensor
-            temperature.Text = Math.Round(senseHat.Sensors.Temperature.Value).ToString() + " degrees C";
-            humidity.Text = Math.Round(senseHat.Sensors.Humidity.Value).ToString() + " %";
-            pressure.Text = Math.Round(senseHat.Sensors.Pressure.Value).ToString() + " hPa";
 
             // Update physical display
             updateScreen();

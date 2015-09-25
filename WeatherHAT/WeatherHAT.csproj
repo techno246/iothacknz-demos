@@ -93,6 +93,10 @@
     <Content Include="ApplicationInsights.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="RT.IoT.Sensors\Properties\RichardsTech.Sensors.rd.xml" />
+    <Content Include="RT.IoT.Sensors\RT.IoT.Sensors.dll" />
+    <Content Include="RT.IoT.Sensors\RT.IoT.Sensors.pdb" />
+    <None Include="Emmellsoft.IoT.Rpi.SenseHat\Emmellsoft.IoT.Rpi.SenseHat.pri" />
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
@@ -109,9 +113,13 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
+    <None Include="RT.IoT.Sensors\RT.IoT.Sensors.pri" />
     <None Include="SenseHatDemo_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Emmellsoft.IoT.Rpi.SenseHat\Emmellsoft.IoT.Rpi.SenseHat.dll" />
+    <Content Include="Emmellsoft.IoT.Rpi.SenseHat\Emmellsoft.IoT.Rpi.SenseHat.pdb" />
+    <Content Include="Emmellsoft.IoT.Rpi.SenseHat\Properties\Rpi.SenseHat.rd.xml" />
     <Content Include="Properties\Default.rd.xml" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
     <Content Include="Assets\SplashScreen.scale-200.png" />
