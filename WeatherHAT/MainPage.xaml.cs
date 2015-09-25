@@ -23,6 +23,7 @@ using MSAWeather;
 using SenseHatDemo;
 using System.Threading;
 using Emmellsoft.IoT.Rpi.SenseHat.Fonts;
+using Windows.System.Threading;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -33,38 +34,207 @@ namespace SenseHatDemo
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        // Periodic routine timers
+        ThreadPoolTimer joystickPollTimer;
+        ThreadPoolTimer updateSensorsTimer;
+        ThreadPoolTimer forecastUpdateTimer;
+
+        // Variable that contains current forecasted weather
+        WeatherData.Rootobject weatherObject = null;
+        string currentCity = "Auckland";
+
+        // Sensehat objects
+        ISenseHat senseHat;
+        ISenseHatDisplay display;
+        TinyFont tinyFont;
+        TextScroller<BwCharacter> textScroller;
+
         public MainPage()
         {
             this.InitializeComponent();
 
             Task.Run(async () =>
             {
-                ISenseHat senseHat = await SenseHatFactory.Singleton.Create();
-
-                Run(senseHat);
-
-                
+                await initSenseHat();
             });
+        }
+
+        public async Task initSenseHat()
+        {
+
+            // Create sensehat object
+            senseHat = await SenseHatFactory.Singleton.Create();
+
+            // Init font
+            tinyFont = new TinyFont();
+            // Init display
+            display = senseHat.Display;
+            // Get a copy of the rainbow colors.
+            senseHat.Display.Reset();
+            // Recreate the font from the serialized bytes.
+            BwFont font = BwFont.Deserialize(FontBytes);
+            // Get the characters to scroll.
+            IEnumerable<BwCharacter> characters = font.GetChars("Error");
+            // Create the character renderer.
+            BwCharacterRenderer characterRenderer = new BwCharacterRenderer(GetCharacterColor);
+            // Create the text scroller.
+            textScroller = new TextScroller<BwCharacter>(senseHat.Display, characterRenderer, characters);
+
+
+            // Update forecast for first time
+            getWeather(currentCity);
+
+            // Check joystick every 100 ms
+            joystickPollTimer = ThreadPoolTimer.CreatePeriodicTimer(pollJoystick, TimeSpan.FromMilliseconds(50));
+            // Check sensor every 2 s
+            updateSensorsTimer = ThreadPoolTimer.CreatePeriodicTimer(updateSensors, TimeSpan.FromSeconds(2));
+            // Get updated weather every 1 minute
+            forecastUpdateTimer = ThreadPoolTimer.CreatePeriodicTimer(updateForecast, TimeSpan.FromMinutes(1));
+        }
+
+        // Check state of joystick
+        private void pollJoystick(ThreadPoolTimer timer)
+        {
+            try
+            {
+                if (senseHat.Joystick.Update() && senseHat.Joystick.EnterKey == KeyState.Pressed) // Has any of the buttons on the joystick changed?
+                {
+                    SwitchToNextScrollMode();
+                    updateScreen();
+                }
+            }
+            catch (Exception e)
+            {
+
+            }
+        }
+
+        // Try get weather forecast
+        private async void updateForecast(ThreadPoolTimer timer)
+        {
+            await getWeather(currentCity);
+            updateScreen();
+        }
+
+        // Check onboard sensors and update display 
+        private void updateSensors(ThreadPoolTimer timer)
+        {
+            // Update sensors on board
+            senseHat.Sensors.HumiditySensor.Update();
+            senseHat.Sensors.PressureSensor.Update();
+
+            updateScreen();
+        }
+
+        private void updateScreen()
+        {
+            if (senseHat.Sensors.Temperature.HasValue | senseHat.Sensors.Humidity.HasValue | senseHat.Sensors.Pressure.HasValue)
+            {
+                try
+                {
+                    switch (_currentMode)
+                    {
+                        case Selector.Local_Temp:
+                            int temperature = (int)Math.Round(senseHat.Sensors.Temperature.Value);
+                            textB = temperature.ToString();
+                            col = Colors.White;
+                            break;
+
+                        case Selector.API_Temp:
+                            float temperaturefl = weatherObject.main.temp;// ;// + " degrees C";
+                            temperature = (int)Math.Round(temperaturefl);
+                            textB = temperature.ToString();
+                            col = Colors.Blue;
+                            break;
+
+                        case Selector.Local_Humidity:
+                            int humid = (int)Math.Round(senseHat.Sensors.Humidity.Value);
+                            textB = humid.ToString();
+                            col = Colors.Green;
+                            break;
+
+                        case Selector.API_Humidity:
+                            float humid1 = weatherObject.main.humidity;// ;// + " degrees C";
+                            temperature = (int)Math.Round(humid1);
+                            textB = temperature.ToString();
+                            col = Colors.Yellow;
+                            break;
+
+                        // This case will not happen so catch executes
+                        case Selector.Local_Pressure:
+                            float pres = weatherObject.main.pressure;// ;// + " degrees C";
+                            temperature = (int)Math.Round(pres);
+                            textB = temperature.ToString();
+
+                            col = Colors.Purple;
+                            break;
+
+                        default:
+                            textB = "**";
+                            col = Colors.Red;
+                            break;
+                    }
+
+                    // Refresh display
+                    display.Clear();
+                    tinyFont.Write(display, textB, col);
+
+                }
+
+                catch (Exception e)
+                {
+                    // Step the scroller.
+                    if (!textScroller.Step())
+                    {
+                        // Reset the scroller when reaching the end.
+                        textScroller.Reset();
+                    }
+
+                    //FillDisplay(textScroller.ScrollPixelOffset);
+                    senseHat.Display.Fill(Colors.Black);
+
+                    // Draw the scroll text.
+                    textScroller.Render();
+                }
+
+                display.Update();
+            }
         }
 
         private async void getWeatherPressed(object sender, RoutedEventArgs e)
         {
-            getWeather(textBoxCity.Text);
+            currentCity = textBoxCity.Text;
+            progressBar.Visibility = Visibility.Visible;
+            await getWeather(currentCity);
+            progressBar.Visibility = Visibility.Collapsed;
 
-            ISenseHat senseHat = await SenseHatFactory.Singleton.Create();
+            if (weatherObject == null)
+            {
+                var messageDialog = new Windows.UI.Popups.MessageDialog("An error occured");
+                await messageDialog.ShowAsync();
+            }
 
-            senseHat.Sensors.HumiditySensor.Update();
-            senseHat.Sensors.PressureSensor.Update();
+            // Assign textboxes in UI to values retrieved from our weather API
+            textBlockCity.Text = weatherObject.name;
+            textBlockTemperature.Text = weatherObject.main.temp + " degrees C";
+            textBlockHumidity.Text = weatherObject.main.humidity + " %";
+            textBlockPressure.Text = weatherObject.main.pressure + " hPa";
+            textBlockConditions.Text = weatherObject.weather.First().description;
 
+            // Assign textboxes in UI to values retrieved from sensor
             temperature.Text = Math.Round(senseHat.Sensors.Temperature.Value).ToString() + " degrees C";
             humidity.Text = Math.Round(senseHat.Sensors.Humidity.Value).ToString() + " %";
             pressure.Text = Math.Round(senseHat.Sensors.Pressure.Value).ToString() + " hPa";
 
+            // Update physical display
+            updateScreen();
+
         }
 
-        private async void getWeather(string city)
+        private async Task getWeather(string city)
         {
-            progressBar.Visibility = Visibility.Visible;
+
+            WeatherData.Rootobject rootObject = null;
             try
             {
                 // Initialise HttpClient for accessing RESTful APIs
@@ -76,31 +246,20 @@ namespace SenseHatDemo
                 string x = await client.GetStringAsync("http://api.openweathermap.org/data/2.5/weather?q=" + city + "&units=metric");
 
                 // Convert the JSON string response (stored in x) into an object with the structure defined in the class WeatherData.Rootobject
-                WeatherData.Rootobject rootObject = JsonConvert.DeserializeObject<WeatherData.Rootobject>(x);
-
-                // Assign textboxes in UI to values retrieved from our weather API
-                textBlockCity.Text = rootObject.name;
-                textBlockTemperature.Text = rootObject.main.temp + " degrees C";
-                textBlockHumidity.Text = rootObject.main.humidity + " %";
-                textBlockPressure.Text = rootObject.main.pressure + " hPa";
-                textBlockConditions.Text = rootObject.weather.First().description;
+                rootObject = JsonConvert.DeserializeObject<WeatherData.Rootobject>(x);
             }
             catch (Exception e)
             {
-                var messageDialog = new Windows.UI.Popups.MessageDialog("An error occured");
 
-                await messageDialog.ShowAsync();
             }
-            progressBar.Visibility = Visibility.Collapsed;
+
+            weatherObject = rootObject;
         }
 
         private void switch_Click(object sender, RoutedEventArgs e)
         {
             SwitchToNextScrollMode();
         }
-
-
-
 
         string textB = "";
         Color col;
@@ -126,147 +285,6 @@ namespace SenseHatDemo
             }
         }
 
-        public async void Run(ISenseHat SenseHat)
-        {
-            var tinyFont = new TinyFont();
-
-            ISenseHatDisplay display = SenseHat.Display;
-
-            // Get a copy of the rainbow colors.
-            SenseHat.Display.Reset();
-
-            // Recreate the font from the serialized bytes.
-            BwFont font = BwFont.Deserialize(FontBytes);
-
-            // Get the characters to scroll.
-            IEnumerable<BwCharacter> characters = font.GetChars("Error");
-
-            // Create the character renderer.
-            BwCharacterRenderer characterRenderer = new BwCharacterRenderer(GetCharacterColor);
-
-            // Create the text scroller.
-            TextScroller<BwCharacter> textScroller = new TextScroller<BwCharacter>(SenseHat.Display, characterRenderer, characters);
-
-            while (true)
-            {
-                SenseHat.Sensors.HumiditySensor.Update();
-                SenseHat.Sensors.PressureSensor.Update();
-
-                if (SenseHat.Sensors.Temperature.HasValue | SenseHat.Sensors.Humidity.HasValue | SenseHat.Sensors.Pressure.HasValue)
-                {
-
-
-                    /*if (text.Length > 2)
-					{
-						// Too long to fit the display!
-						text = "**";
-					}*/
-
-                    try
-                    {
-                        // Initialise HttpClient for accessing RESTful APIs
-                        HttpClient client = new HttpClient();
-
-                        // Calling our weather API, passing the string 'city' so we're getting the correct weather returned.
-                        // The 'await' tag tells the computer to wait for the results to be returned before continuing with
-                        // the rest of the code. The results are then assigned to string 'x' to be used later in the code.
-                        string x = await client.GetStringAsync(new Uri("http://api.openweathermap.org/data/2.5/weather?q=Auckland&units=metric"));
-
-                        // Convert the JSON string response (stored in x) into an object with the structure defined in the class WeatherData.Rootobject
-                        WeatherData.Rootobject rootObject = JsonConvert.DeserializeObject<WeatherData.Rootobject>(x);
-
-                        // Assign textboxes in UI to values retrieved from our weather API
-                        //textB= rootObject.name;
-
-                        switch (_currentMode)
-                        {
-                            case Selector.Local_Temp:
-                                int temperature = (int)Math.Round(SenseHat.Sensors.Temperature.Value);
-                                textB = temperature.ToString();
-                                col = Colors.White;
-                                break;
-
-                            case Selector.API_Temp:
-                                float temperaturefl = rootObject.main.temp;// ;// + " degrees C";
-                                temperature = (int)Math.Round(temperaturefl);
-                                textB = temperature.ToString();
-                                col = Colors.Blue;
-                                break;
-
-                            case Selector.Local_Humidity:
-                                int humid = (int)Math.Round(SenseHat.Sensors.Humidity.Value);
-                                textB = humid.ToString();
-                                col = Colors.Green;
-                                break;
-
-                            case Selector.API_Humidity:
-                                float humid1 = rootObject.main.humidity;// ;// + " degrees C";
-                                temperature = (int)Math.Round(humid1);
-                                textB = temperature.ToString();
-                                col = Colors.Yellow;
-                                break;
-
-                                // This case will not happen so catch executes
-                            case Selector.Local_Pressure:
-                                float pres = rootObject.main.pressure;// ;// + " degrees C";
-                                temperature = (int)Math.Round(pres);
-                                textB = temperature.ToString();
-                      
-                                col = Colors.Purple;
-                                break;
-
-                            default:
-                                textB = "**";
-                                col = Colors.Red;
-                                break;
-                        }
-
-
-                        if (SenseHat.Joystick.Update() && SenseHat.Joystick.EnterKey == KeyState.Pressed) // Has any of the buttons on the joystick changed?
-                        {
-
-                            SwitchToNextScrollMode();
-
-                        }
-
-
-                        display.Clear();
-                        // Was Colors.While - Too bright 
-                        tinyFont.Write(display, textB, col);
-
-
-                        //textBlockConditions.Text = rootObject.weather.First().description;
-                    }
-                    catch (Exception e)
-                    {
-                        // Step the scroller.
-                        if (!textScroller.Step())
-                            {
-                                // Reset the scroller when reaching the end.
-                                textScroller.Reset();
-                            }
-
-                        //FillDisplay(textScroller.ScrollPixelOffset);
-                        SenseHat.Display.Fill(Colors.Black);
-
-                        // Draw the scroll text.
-                        textScroller.Render();
-
-                    }
-
-                    display.Update();
-
-                    // Sleep quite some time; the temperature usually change quite slowly...
-                    // OpenweatherMap is not going to like this hahah
-                    Sleep(TimeSpan.FromMilliseconds(50));
-                }
-                else
-                {
-                    // Rapid update until there is a temperature reading.
-                    Sleep(TimeSpan.FromSeconds(0.5));
-                }
-            }
-        }
 
         private Color GetCharacterColor(BwCharacterRendererPixelMap pixelMap)
         {
