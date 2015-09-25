@@ -27,7 +27,7 @@
 
     
         <TextBlock x:Name="titleBlock" VerticalAlignment="Bottom" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" TextWrapping="Wrap" Text="IoT Weather Station" HorizontalAlignment="Center" FontSize="40"/>
-        <TextBox x:Name="textBoxCity" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" TextWrapping="Wrap" Width="170"  PlaceholderText="Enter city"/>
+        <TextBox x:Name="textBoxCity" Text="Auckland" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right" TextWrapping="Wrap" Width="170"  PlaceholderText="Enter city"/>
         <Button x:Name="buttonGetWeather" Grid.Row="1" Grid.Column="1" Content="Get Weather" Click="getWeatherPressed"/>
         <StackPanel HorizontalAlignment="Center" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Top" Width="340">
             <ProgressBar x:Name="progressBar" HorizontalAlignment="Left" Height="10" VerticalAlignment="Top" Visibility="Collapsed" IsIndeterminate="True" Width="100"/>

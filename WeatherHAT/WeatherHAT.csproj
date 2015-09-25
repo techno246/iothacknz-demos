@@ -29,6 +29,8 @@
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <ErrorReport>prompt</ErrorReport>
     <Prefer32Bit>true</Prefer32Bit>
+    <DocumentationFile>
+    </DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|ARM'">
     <OutputPath>bin\ARM\Release\</OutputPath>
@@ -93,8 +95,6 @@
     <Content Include="ApplicationInsights.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="lib\Emmellsoft.IoT.Rpi.SenseHat\Emmellsoft.IoT.Rpi.SenseHat.pri" />
-    <None Include="lib\RT.IoT.Sensors\RT.IoT.Sensors.pri" />
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
@@ -114,12 +114,6 @@
     <None Include="SenseHatDemo_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="lib\Emmellsoft.IoT.Rpi.SenseHat\Emmellsoft.IoT.Rpi.SenseHat.dll" />
-    <Content Include="lib\Emmellsoft.IoT.Rpi.SenseHat\Emmellsoft.IoT.Rpi.SenseHat.pdb" />
-    <Content Include="lib\Emmellsoft.IoT.Rpi.SenseHat\Properties\Rpi.SenseHat.rd.xml" />
-    <Content Include="lib\RT.IoT.Sensors\Properties\RichardsTech.Sensors.rd.xml" />
-    <Content Include="lib\RT.IoT.Sensors\RT.IoT.Sensors.dll" />
-    <Content Include="lib\RT.IoT.Sensors\RT.IoT.Sensors.pdb" />
     <Content Include="Properties\Default.rd.xml" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
     <Content Include="Assets\SplashScreen.scale-200.png" />
@@ -142,14 +136,13 @@
   <ItemGroup>
     <Reference Include="Emmellsoft.IoT.Rpi.SenseHat, Version=1.0.0.0, Culture=neutral, processorArchitecture=ARM">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>.\Emmellsoft.IoT.Rpi.SenseHat.dll</HintPath>
+      <HintPath>lib\Emmellsoft.IoT.Rpi.SenseHat.dll</HintPath>
     </Reference>
     <Reference Include="RT.IoT.Sensors, Version=1.0.0.0, Culture=neutral, processorArchitecture=ARM">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>.\RT.IoT.Sensors.dll</HintPath>
+      <HintPath>lib\RT.IoT.Sensors.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
